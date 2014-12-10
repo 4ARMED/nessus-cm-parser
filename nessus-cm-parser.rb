@@ -11,7 +11,7 @@ end
 
 @opts = Trollop::options do
   opt :input_file, "Nessus .nessus input file", :type => :string, :required => true
-  opt :wiki_url, "MediaWiki API URL", :type => :string, :required => false
+  opt :wiki_url, "MediaWiki API URL (full path to /api.php)", :type => :string, :required => false
   opt :wiki_username, "MediaWiki username", :type => :string, :required => false
   opt :wiki_password, "MediaWiki password", :type => :string, :required => false
   opt :limit, "Limit the number of results processed", :default => 0, :required => false
