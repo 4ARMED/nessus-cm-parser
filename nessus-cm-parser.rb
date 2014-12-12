@@ -48,41 +48,29 @@ xml = Nokogiri::XML(File.new(@opts[:input_file]))
 xml.xpath('/NessusClientData_v2/Report').each do |xml_report|
   xml_report.xpath('./ReportHost').each do |xml_host|
     xml_host.xpath('./ReportItem').each do |xml_report_item|
-      next unless xml_report_item.attributes['pluginName'].value == "Windows Compliance Checks"
+      next unless xml_report_item.attributes['pluginName'].value =~ /Compliance Checks/
       next unless xml_report_item.xpath('./cm:compliance-result', 'cm' => 'http://www.nessus.org/cm').text == "FAILED"
 
       @text = "[[Category:Findings]]\n[[Category:Compliance]]\n\n"
-      @title = ""
-
-      xml_report_item.xpath('./cm:compliance-info', 'cm' => 'http://www.nessus.org/cm').each do |xml_report_item_cm_info|
-        info = xml_report_item_cm_info.text.lines.map(&:chomp)
-        info.shift
-
-        # behold the hackery!
-        @title = info.shift.gsub(/^[\d\.]+\s+/,'').gsub(/\s+\(.*Scored\)$/,'')
-
-        @text << "=Title=\n#{@title}\n\n"
-        @text << "=Impact=\nUnknown\n\n"
-        @text << "=Exploitability=\nUnknown\n\n"
-        @text << "=Description=\n#{info.join("\n")}\n\n"
-      end
-
-      xml_report_item.xpath('./cm:compliance-solution', 'cm' => 'http://www.nessus.org/cm').each do |xml_report_item_cm_solution|
-        @text << "=Recommendation=\n#{xml_report_item_cm_solution.text}\n\n"
-      end
-
-      xml_report_item.xpath('./cm:compliance-see-also', 'cm' => 'http://www.nessus.org/cm').each do |xml_report_item_cm_ref|
-        @text << "=Reference=\n#{xml_report_item_cm_ref.text}"
-      end
+      @title = xml_report_item.xpath('./cm:compliance-check-name', 'cm' => 'http://www.nessus.org/cm').text.gsub(/^[\d\.]+\s/,'')
+      @text << "=Title=\n#{@title}\n\n"
+      @text << "=Impact=\nUnknown\n\n"
+      @text << "=Exploitability=\nUnknown\n\n"
+      @text << "=Description=\n" + xml_report_item.xpath('./cm:compliance-info', 'cm' => 'http://www.nessus.org/cm').text + "\n"
+      @text << "=Recommendation=\n" + xml_report_item.xpath('./cm:compliance-solution', 'cm' => 'http://www.nessus.org/cm').text + "\n"
+      @text << "=Reference=\n" + xml_report_item.xpath('./cm:compliance-see-also', 'cm' => 'http://www.nessus.org/cm').text + "\n"
 
       # shove it all in the wiki if configured
       if wiki
-        log "uploading #{@title} to wiki"
+        log "creating wiki page: #{@title}"
         begin
           wiki.create(@title, @text)
         rescue MediaWiki::Exception => e
           puts "[!] Exception: #{e.message}"
         end
+      else
+        puts @text
+        puts "---------------"
       end
 
 
