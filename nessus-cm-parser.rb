@@ -36,6 +36,7 @@ if @opts[:wiki_url]
       wiki.login(@opts[:wiki_username], @opts[:wiki_password])
     rescue MediaWiki::Unauthorized => e
       puts "[!] Login failed: #{e.to_s}"
+      exit 1
     end
   end
 end
